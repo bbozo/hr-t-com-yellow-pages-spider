@@ -1,0 +1,35 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Name:</b>
+  <%= @merchant.name %>
+</p>
+
+<p>
+  <b>City:</b>
+  <%= @merchant.city %>
+</p>
+
+<p>
+  <b>Street:</b>
+  <%= @merchant.street %>
+</p>
+
+<p>
+  <b>Location link:</b>
+  <%= @merchant.location_link %>
+</p>
+
+<p>
+  <b>Telephone number:</b>
+  <%= @merchant.telephone_number %>
+</p>
+
+<p>
+  <b>Additional data:</b>
+  <%= @merchant.additional_data %>
+</p>
+
+
+<%= link_to 'Edit', edit_merchant_path(@merchant) %> |
+<%= link_to 'Back', merchants_path %>
