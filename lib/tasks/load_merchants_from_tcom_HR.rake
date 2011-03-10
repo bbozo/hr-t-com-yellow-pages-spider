@@ -1,4 +1,4 @@
-SKIP_UNTIL = 'qq'
+SKIP_UNTIL = 'er'
 
 def dont_fret
   begin
@@ -68,11 +68,12 @@ namespace :load_merchants do
             begin
               @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{@current_search}&mjesto=&ulica=&zupanija=&pozivni=")
               @cookie_jar = @page.response['set-cookie'].split('; ',2)[0]
-              while body_to_merchants(@page) == 100
+              while body_to_merchants(@page) == 100 and @page_count < 20
+                printf " #{@page_count} \n  "
                 @page_count = @page_count + 1
-                printf "\n  "
                 @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) )
               end
+              puts "PAGE COUNT IS 20!!" if @page_count == 20
               sleep 1
               puts
             rescue Exception => e
