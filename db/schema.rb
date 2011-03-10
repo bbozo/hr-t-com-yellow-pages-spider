@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110310130010) do
+ActiveRecord::Schema.define(:version => 20110310211005) do
 
   create_table "merchants", :force => true do |t|
     t.string   "name"
@@ -18,9 +18,9 @@ ActiveRecord::Schema.define(:version => 20110310130010) do
     t.string   "street"
     t.string   "location_link"
     t.string   "telephone_number"
-    t.string   "additional_data"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.text     "additional_data"
   end
 
   add_index "merchants", ["name"], :name => "merchants_name_index"
