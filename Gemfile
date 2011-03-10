@@ -9,6 +9,8 @@ gem 'sqlite3'
 
 gem 'pg'
 
+gem 'hpricot'
+
 # Use unicorn as the web server
 # gem 'unicorn'
 
