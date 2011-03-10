@@ -10,6 +10,7 @@ class CreateMerchants < ActiveRecord::Migration
 
       t.timestamps
     end
+    add_index :merchants, [:name], {:name => "merchants_name_index"}
   end
 
   def self.down
