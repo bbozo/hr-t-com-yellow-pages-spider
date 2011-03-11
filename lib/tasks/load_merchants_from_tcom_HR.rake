@@ -1,4 +1,4 @@
-SKIP_UNTIL = 'er'
+SKIP_UNTIL = 'qq'
 MEANINGFUL_CHARS = "qwertzuiopasdfghjklyxcvbnm1234567890".split //
 
 def dont_fret
