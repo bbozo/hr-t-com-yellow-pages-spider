@@ -1,4 +1,5 @@
 SKIP_UNTIL = 'er'
+MEANINGFUL_CHARS = "qwertzuiopasdfghjklyxcvbnm1234567890".split //
 
 def dont_fret
   begin
@@ -45,6 +46,38 @@ def body_to_merchants(post)
   return @counter
 end
 
+def import_search_results(http, query)
+  printf query
+  @page_count = 1
+  @has_more = false
+  begin
+    @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{query}&mjesto=&ulica=&zupanija=&pozivni=")
+    @cookie_jar = @page.response['set-cookie'].split('; ',2)[0]
+    while body_to_merchants(@page) == 100 and @page_count < 10
+      printf " #{@page_count} \n  "
+      @page_count = @page_count + 1
+      @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) )
+    end
+    @has_more = true if @page_count == 10
+    sleep 1
+    puts
+  rescue Exception => e
+    puts e.inspect
+  ensure
+    return @has_more
+  end
+end
+
+def perform_search(http, current_search)
+  @skip = false if current_search == SKIP_UNTIL
+  @deepen_search = import_search_results http, current_search unless @skip
+  if @deepen_search
+    MEANINGFUL_CHARS.each do |b|
+      perform_search(http, [current_search,b].join(""))
+    end
+  end
+end
+
 namespace :load_merchants do
 
   require 'net/http'
@@ -57,29 +90,9 @@ namespace :load_merchants do
     @counter = 0
     @skip = true
     Net::HTTP.start('imenik.tportal.hr') do |http|
-      @meaningful_chars = "qwertzuiopasdfghjklyxcvbnm1234567890".split //
-      @meaningful_chars.each do |a|
-        @meaningful_chars.each do |b|
-          @current_search = [a,b].join ""
-          @skip = false if @current_search == SKIP_UNTIL
-          unless @skip
-            printf @current_search
-            @page_count = 1
-            begin
-              @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{@current_search}&mjesto=&ulica=&zupanija=&pozivni=")
-              @cookie_jar = @page.response['set-cookie'].split('; ',2)[0]
-              while body_to_merchants(@page) == 100 and @page_count < 20
-                printf " #{@page_count} \n  "
-                @page_count = @page_count + 1
-                @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) )
-              end
-              puts "PAGE COUNT IS 20!!" if @page_count == 20
-              sleep 1
-              puts
-            rescue Exception => e
-              puts e.inspect
-            end
-          end
+      MEANINGFUL_CHARS.each do |a|
+        MEANINGFUL_CHARS.each do |b|
+          perform_search(http, [a,b].join(""))
         end
       end
     end
