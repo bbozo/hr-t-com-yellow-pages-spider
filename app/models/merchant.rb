@@ -7,7 +7,7 @@ class Merchant < ActiveRecord::Base
   end
 
   def duplicates
-    Merchant.where(self.attributes.except("id", "updated_at", "created_at", "additional_data"))
+    Merchant.where(self.attributes.select{|k,v| ["name", "city", "street", "telephone_number"].include? k})
   end
 
 end
