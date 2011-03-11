@@ -23,16 +23,13 @@ def body_to_merchants(post)
       dont_fret { m.city = (div_merchant/"div.ImenikContainerInnerDetailsLeft ul.itemContactInfo li.secondColumn div").last.inner_html }
       dont_fret { m.location_link = "http://imenik.tportal.hr/"+(div_merchant/"div.ImenikContainerInnerDetailsLeft ul.itemContactInfo li.firstColumn a.imenikNaKarti").first.attributes['href'] }
       m.additional_data = []
-      dont_fret {
-        (div_merchant/"div.ostaliPodaciContainer div.ostalipodaciText div.ostalipodaciTextInner div").each do |div_additional|
-          begin
-            k = (div_additional/"div.floatLeft span").inner_html.gsub('&nbsp;', '')
-            v = (div_additional/"div.floatRight").inner_html
-            m.additional_data << { k.strip => v.strip } unless k.blank? and v.blank?
-          rescue
-          end
-        end
-      }
+      (div_merchant/"div.ostaliPodaciContainer div.ostalipodaciText div.ostalipodaciTextInner div").each do |div_additional|
+        dont_fret {
+          k = (div_additional/"div.floatLeft span").inner_html.gsub('&nbsp;', '')
+          v = (div_additional/"div.floatRight").inner_html
+          m.additional_data << { k.strip => v.strip } unless k.blank? and v.blank?
+        }
+      end
       if not m.save
         printf ";"
       elsif @had_problems
@@ -46,17 +43,33 @@ def body_to_merchants(post)
   return @counter
 end
 
+def ensure_tcp_success
+  @repeat = false
+  begin
+    begin
+      yield
+    rescue Exception => e
+      if e.is_a?(SocketError) or e.is_a?(Timeout::Error)
+        @repeat = true
+        printf "E"
+      else
+        raise e
+      end
+    end
+  end while @repeat
+end
+
 def import_search_results(http, query)
   printf query
   @page_count = 1
   @has_more = false
   begin
-    @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{query}&mjesto=&ulica=&zupanija=&pozivni=")
+    ensure_tcp_success{ @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{query}&mjesto=&ulica=&zupanija=&pozivni=") }
     @cookie_jar = @page.response['set-cookie'].split('; ',2)[0]
     while body_to_merchants(@page) == 100 and @page_count < 10
       printf " #{@page_count} \n  "
       @page_count = @page_count + 1
-      @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) )
+      ensure_tcp_success{ @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) ) }
     end
     @has_more = true if @page_count == 10
     sleep 1
@@ -89,30 +102,16 @@ namespace :load_merchants do
     @start_time = Time.now
     @counter = 0
     @skip = true
-    Net::HTTP.start('imenik.tportal.hr') do |http|
-      MEANINGFUL_CHARS.each do |a|
-        MEANINGFUL_CHARS.each do |b|
-          perform_search(http, [a,b].join(""))
+
+    ensure_tcp_success do
+      Net::HTTP.start('imenik.tportal.hr') do |http|
+        MEANINGFUL_CHARS.each do |a|
+          MEANINGFUL_CHARS.each do |b|
+            perform_search(http, [a,b].join(""))
+          end
         end
       end
     end
   end
 
 end
-
-=begin
-require 'net/http'
-require 'uri'
-require 'cgi'
-require 'open-uri'
-
-
-Net::HTTP.start('imenik.tportal.hr') do |http|
-  @current_search = 'la'
-  post = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{@current_search}&mjesto=&ulica=&zupanija=&pozivni=")
-  puts post.body.length
-  get = http.request( Net::HTTP::Get.new('http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=2', {"Cookie" => post.response['set-cookie'].split('; ',2)[0]}) )
-end
-
-
-=end
