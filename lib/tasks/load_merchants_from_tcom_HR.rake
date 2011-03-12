@@ -66,27 +66,39 @@ def import_search_results(http, query)
   printf query
   @page_count = 1
   @has_more = false
-  begin
-    ensure_tcp_success{ @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{query}&mjesto=&ulica=&zupanija=&pozivni=") }
-    @cookie_jar = @page.response['set-cookie'].split('; ',2)[0]
-    while body_to_merchants(@page) == 100 and @page_count < 10
-      printf " #{@page_count} \n  "
-      @page_count = @page_count + 1
-      ensure_tcp_success{ @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) ) }
-    end
-    @has_more = true if @page_count == 10
-    puts
-  rescue Exception => e
-    puts e.inspect
-  ensure
-    return @has_more
+
+  @page = http.post('http://imenik.tportal.hr/show', "newSearch=1&action=pretraga&type=zuteStranice&kljucnerijeci=&naziv=#{query}&mjesto=&ulica=&zupanija=&pozivni=")
+  @cookie_jar = @page.response['set-cookie'].split('; ',2)[0]
+  while body_to_merchants(@page) == 100 and @page_count < 10
+    printf " #{@page_count} \n  "
+    @page_count = @page_count + 1
+    @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) )
   end
+  puts
+  @has_more = true if @page_count == 10
+
+  return @has_more
 end
 
-def perform_search(http, current)
-  @deepen_search = import_search_results http, current
-  if @deepen_search
-    expand_search current { |search_string| perform_search(http, search_string) }
+def perform_search(current)
+  ensure_tcp_success do
+    Net::HTTP.start('imenik.tportal.hr') do |http|
+      @deepen_search = import_search_results http, current.search_string
+      puts "DEEPEN SEARCH = #{@deepen_search}"
+      if @deepen_search
+        SearchPath.transaction do
+          expand_search (current.search_string) { |search_string| SearchPath.run(search_string, current.level + 1) }
+        end
+      end
+    end
+  end
+
+  current.complete!
+end
+
+def run_search_on_level (level)
+  SearchPath.where(:level => level, :status => "in progress").order("search_string").each do |search|
+    perform_search(search)
   end
 end
 
@@ -101,15 +113,25 @@ namespace :load_merchants do
     @start_time = Time.now
     @counter = 0
 
-    ensure_tcp_success do
-      Net::HTTP.start('imenik.tportal.hr') do |http|
-        expand_search do |a|
-          expand_search a do |search|
-            SearchPath.perform(search) { perform_search(http, search) }
-          end
+    puts "Initializing search parameters"
+    SearchPath.transaction do
+      expand_search do |a|
+        expand_search a do |search|
+          #SearchPath.perform(search) { perform_search(http, search) }
+          SearchPath.run(search, 2)
         end
       end
     end
+
+    puts "Starting import"    
+    @level = 2
+    while SearchPath.where(:status => 'in progress').count > 0
+      puts "  =========================== RUNING LEVEL #{@level} ==============================="
+      run_search_on_level @level
+      @level = @level + 1
+    end
+    puts
+    puts "SUCCESS!"
   end
 
 end

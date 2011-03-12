@@ -3,6 +3,7 @@ class CreateSearchPaths < ActiveRecord::Migration
     create_table :search_paths do |t|
       t.string :search_string
       t.string :status
+      t.integer :level
 
       t.timestamps
     end

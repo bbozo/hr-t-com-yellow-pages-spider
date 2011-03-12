@@ -28,6 +28,7 @@ ActiveRecord::Schema.define(:version => 20110312103709) do
   create_table "search_paths", :force => true do |t|
     t.string   "search_string"
     t.string   "status"
+    t.integer  "level"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
