@@ -55,6 +55,7 @@ def ensure_tcp_success
       if e.is_a?(SocketError) or e.is_a?(Timeout::Error)
         @repeat = true
         puts " ensure_tcp_success #{e.inspect}"
+        sleep 1
       else
         raise e
       end
