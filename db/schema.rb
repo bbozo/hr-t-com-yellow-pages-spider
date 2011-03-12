@@ -10,7 +10,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20110310211005) do
+ActiveRecord::Schema.define(:version => 20110312103709) do
 
   create_table "merchants", :force => true do |t|
     t.string   "name"
@@ -24,5 +24,14 @@ ActiveRecord::Schema.define(:version => 20110310211005) do
   end
 
   add_index "merchants", ["name"], :name => "merchants_name_index"
+
+  create_table "search_paths", :force => true do |t|
+    t.string   "search_string"
+    t.string   "status"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "search_paths", ["search_string"], :name => "index_search_paths_on_search_string"
 
 end
