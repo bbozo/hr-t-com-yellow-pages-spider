@@ -47,9 +47,9 @@ def body_to_merchants(post)
 end
 
 def ensure_tcp_success
-  @repeat = false
   begin
     begin
+      @repeat = false
       yield
     rescue Exception => e
       if e.is_a?(SocketError) or e.is_a?(Timeout::Error)
