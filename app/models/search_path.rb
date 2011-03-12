@@ -19,8 +19,10 @@ class SearchPath < ActiveRecord::Base
   end
 
   def complete?
+    status == 'complete'
+=begin
     return true if status == 'complete'
-    
+
     (2..search_string.length).each do |len|
       (0..search_string.length-len).each do |offs|
         #puts "#{search_string[offs...offs+len]} => #{SearchPath.where(:search_string => search_string[offs...offs+len], :status => 'complete').count} - #{SearchPath.where(:search_string => search_string[offs...offs+len], :status => 'complete').to_sql}"
@@ -29,10 +31,11 @@ class SearchPath < ActiveRecord::Base
     end
 
     return false
+=end
   end
 
   def in_progress?
-    not complete?
+    status == 'in progress'
   end
 
   def self.perform(search_string, level)
