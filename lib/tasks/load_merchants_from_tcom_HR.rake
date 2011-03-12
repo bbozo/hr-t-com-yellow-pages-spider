@@ -32,7 +32,7 @@ def body_to_merchants(post)
       end
       if not m.save
         printf ";"
-      elsif @had_problems
+      elsif @had_problem
         printf "!"
       else
         printf "."
