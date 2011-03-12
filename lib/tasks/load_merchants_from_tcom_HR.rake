@@ -54,7 +54,7 @@ def ensure_tcp_success
     rescue Exception => e
       if e.is_a?(SocketError) or e.is_a?(Timeout::Error)
         @repeat = true
-        printf "E"
+        puts " ensure_tcp_success #{e.inspect}"
       else
         raise e
       end
