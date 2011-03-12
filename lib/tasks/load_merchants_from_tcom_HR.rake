@@ -84,7 +84,6 @@ def perform_search(current)
   ensure_tcp_success do
     Net::HTTP.start('imenik.tportal.hr') do |http|
       @deepen_search = import_search_results http, current.search_string
-      puts "DEEPEN SEARCH = #{@deepen_search}"
       if @deepen_search
         SearchPath.transaction do
           expand_search (current.search_string) { |search_string| SearchPath.run(search_string, current.level + 1) }
