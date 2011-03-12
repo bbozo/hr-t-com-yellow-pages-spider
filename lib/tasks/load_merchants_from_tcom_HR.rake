@@ -1,5 +1,8 @@
-SKIP_UNTIL = 'qq'
-MEANINGFUL_CHARS = "qwertzuiopasdfghjklyxcvbnm1234567890".split //
+MEANINGFUL_CHARS = "qwertzuiopasdfghjklyxcvbnm1234567890 ".split //
+
+def expand_search(history = '')
+  MEANINGFUL_CHARS.each { |c| yield ([history, c].join("")) }
+end
 
 def dont_fret
   begin
@@ -72,7 +75,6 @@ def import_search_results(http, query)
       ensure_tcp_success{ @page = http.request( Net::HTTP::Get.new("http://imenik.tportal.hr/show?action=pretraga&type=zuteStranice&showResultsPage=#{@page_count}", {"Cookie" => @cookie_jar}) ) }
     end
     @has_more = true if @page_count == 10
-    sleep 1
     puts
   rescue Exception => e
     puts e.inspect
@@ -81,13 +83,10 @@ def import_search_results(http, query)
   end
 end
 
-def perform_search(http, current_search)
-  @skip = false if current_search == SKIP_UNTIL
-  @deepen_search = import_search_results http, current_search unless @skip
+def perform_search(http, current)
+  @deepen_search = import_search_results http, current
   if @deepen_search
-    MEANINGFUL_CHARS.each do |b|
-      perform_search(http, [current_search,b].join(""))
-    end
+    expand_search current { |search_string| perform_search(http, search_string) }
   end
 end
 
@@ -101,13 +100,12 @@ namespace :load_merchants do
   task :t_com_HR => :environment do
     @start_time = Time.now
     @counter = 0
-    @skip = true
 
     ensure_tcp_success do
       Net::HTTP.start('imenik.tportal.hr') do |http|
-        MEANINGFUL_CHARS.each do |a|
-          MEANINGFUL_CHARS.each do |b|
-            perform_search(http, [a,b].join(""))
+        expand_search do |a|
+          expand_search a do |search|
+            SearchPath.perform(search) { perform_search(http, search) }
           end
         end
       end
