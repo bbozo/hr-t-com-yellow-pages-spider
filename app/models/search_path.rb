@@ -5,17 +5,42 @@ class SearchPath < ActiveRecord::Base
   validates :level, :presence => true
 
   def self.run(search_string, level)
-    puts "   * initiating search on #{search_string}, level #{level}"
+    
     old_search = SearchPath.find_by_search_string(search_string)
+    superset_search = SearchPath.find_superset(search_string, level) unless old_search
+
     if old_search
+      puts "   * confirming search path on '#{search_string}', level #{level}, status is #{old_search.status}"
       return old_search
+    elsif superset_search
+      puts "   * skipping search path on '#{search_string}', level #{level}, already complete within '#{superset_search.search_string}'"
+      return create!(:search_string => search_string, :status => "complete", :level => level)
     else
+      puts "   * initiating search path on '#{search_string}', level #{level}"
       return create!(:search_string => search_string, :status => "in progress", :level => level) if not old_search
     end
   end
 
+  def self.find_superset(search_string, level)
+    (1..search_string.length-(level-1)).each do |offs|
+      #puts "#{search_string[offs...offs+(level-1)]} => #{SearchPath.where(:search_string => search_string[offs...offs+(level-1)], :status => 'complete').count} - #{SearchPath.where(:search_string => search_string[offs...offs+(level-1)], :status => 'complete').to_sql}"
+      superset = SearchPath.where(:search_string => search_string[offs...offs+(level-1)], :status => 'complete').first
+      return superset if superset
+    end
+      
+    return nil
+  end
+
   def complete!
     update_attribute :status, 'complete'
+  end
+
+  def incomplete!
+    update_attribute :status, 'incomplete'
+  end
+
+  def finished?
+    not in_progress?
   end
 
   def complete?
@@ -34,14 +59,12 @@ class SearchPath < ActiveRecord::Base
 =end
   end
 
-  def in_progress?
-    status == 'in progress'
+  def incomplete?
+    status == 'incomplete'
   end
 
-  def self.perform(search_string, level)
-    search = SearchPath.run(search_string, level)
-    yield unless search.complete?
-    search.complete!
+  def in_progress?
+    status == 'in progress'
   end
 
 end

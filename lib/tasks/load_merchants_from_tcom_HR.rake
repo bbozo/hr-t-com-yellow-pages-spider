@@ -93,7 +93,11 @@ def perform_search(current)
     end
   end
 
-  current.complete!
+  if @deepen_search
+    current.incomplete!
+  else
+    current.complete!
+  end
 end
 
 def run_search_on_level (level)
@@ -117,7 +121,6 @@ namespace :load_merchants do
     SearchPath.transaction do
       expand_search do |a|
         expand_search a do |search|
-          #SearchPath.perform(search) { perform_search(http, search) }
           SearchPath.run(search, 2)
         end
       end
