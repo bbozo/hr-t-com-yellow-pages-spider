@@ -5,6 +5,7 @@ class SearchPath < ActiveRecord::Base
   validates :level, :presence => true
 
   def self.clean_up_by_supersets(level)
+    puts "Cleaning supersets for level #{level}"
     SearchPath.where(:level => level, :status => "in progress").order("search_string").each do |search|
       superset_search = SearchPath.find_superset(search.search_string, level)
       if superset_search
@@ -12,6 +13,7 @@ class SearchPath < ActiveRecord::Base
         search.complete!
       end
     end
+    puts "  DONE!"
   end
 
   def self.run(search_string, level)   
@@ -42,7 +44,6 @@ class SearchPath < ActiveRecord::Base
 
   def complete!
     update_attribute :status, 'complete'
-    SearchPath.clean_up_by_supersets(level+1)
   end
 
   def incomplete!
