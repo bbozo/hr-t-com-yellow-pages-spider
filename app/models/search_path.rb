@@ -42,6 +42,7 @@ class SearchPath < ActiveRecord::Base
 
   def complete!
     update_attribute :status, 'complete'
+    SearchPath.clean_up_by_supersets level
   end
 
   def incomplete!
