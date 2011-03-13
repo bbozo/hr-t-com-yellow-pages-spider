@@ -4,8 +4,17 @@ class SearchPath < ActiveRecord::Base
   validates :status, :presence => true
   validates :level, :presence => true
 
-  def self.run(search_string, level)
-    
+  def self.clean_up_by_supersets(level)
+    SearchPath.where(:level => level, :status => "in progress").order("search_string").each do |search|
+      superset_search = SearchPath.find_superset(search.search_string, level)
+      if superset_search
+        puts "   * skipping search path on '#{search.search_string}', level #{level}, already complete within '#{superset_search.search_string}'"
+        search.complete!
+      end
+    end
+  end
+
+  def self.run(search_string, level)   
     old_search = SearchPath.find_by_search_string(search_string)
     superset_search = SearchPath.find_superset(search_string, level) unless old_search
 
