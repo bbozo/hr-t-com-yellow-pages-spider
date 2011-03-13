@@ -102,8 +102,9 @@ end
 
 def run_search_on_level (level)
   i = 0
+  SearchPath.clean_up_by_supersets(level)
   SearchPath.where(:level => level, :status => "in progress").order("search_string").each do |search|
-    SearchPath.clean_up_by_supersets(level) if i % 20 == 0
+    SearchPath.clean_up_by_supersets(level+1) if i % 20 == 0
     perform_search(search)
     i = i + 1
   end
