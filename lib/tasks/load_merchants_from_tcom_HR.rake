@@ -9,7 +9,7 @@ def dont_fret
     yield
   rescue Exception => e
     @had_problem = true
-    puts e.inspect unless e.is_a? NoMethodError
+    raise e unless e.is_a? NoMethodError
   end
 end
 
