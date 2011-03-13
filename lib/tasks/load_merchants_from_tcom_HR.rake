@@ -118,6 +118,7 @@ namespace :load_merchants do
     @start_time = Time.now
     @counter = 0
 
+=begin
     puts "Initializing search parameters"
     SearchPath.transaction do
       expand_search do |a|
@@ -126,6 +127,7 @@ namespace :load_merchants do
         end
       end
     end
+=end
 
     puts "Starting import"    
     @level = 2
