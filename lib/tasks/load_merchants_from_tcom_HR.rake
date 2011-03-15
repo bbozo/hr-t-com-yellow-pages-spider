@@ -1,7 +1,8 @@
-MEANINGFUL_CHARS = "qwertzuiopasdfghjklyxcvbnm1234567890 ".split //
+MEANINGFUL_CHARS = "qwertzuiopasdfghjklyxcvbnm1234567890,.-".split //
 
 def expand_search(history = '')
-  MEANINGFUL_CHARS.each { |c| yield ([history, c].join("")) }
+  MEANINGFUL_CHARS.each { |c| yield ("#{history}#{c}") }
+  MEANINGFUL_CHARS.each { |c| yield ("#{history} #{c}") } unless history.blank?
 end
 
 def dont_fret
@@ -87,7 +88,7 @@ def perform_search(current)
       @deepen_search = import_search_results http, current.search_string
       if @deepen_search
         SearchPath.transaction do
-          expand_search (current.search_string) { |search_string| SearchPath.run(search_string, current.level + 1) }
+          expand_search (current.search_string) { |search_string| SearchPath.run search_string }
         end
       end
     end
@@ -121,16 +122,14 @@ namespace :load_merchants do
     @start_time = Time.now
     @counter = 0
 
-=begin
     puts "Initializing search parameters"
     SearchPath.transaction do
       expand_search do |a|
         expand_search a do |search|
-          SearchPath.run(search, 2)
+          SearchPath.run search
         end
       end
     end
-=end
 
     puts "Starting import"    
     @level = 2
