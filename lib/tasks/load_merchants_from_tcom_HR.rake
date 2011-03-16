@@ -53,11 +53,13 @@ def ensure_tcp_success
       @repeat = false
       yield
     rescue Exception => e
-      if e.is_a?(SocketError) or e.is_a?(Timeout::Error)
+      if e.is_a?(SocketError) or e.is_a?(Timeout::Error) or e.is_a?(Errno::EHOSTUNREACH)
         @repeat = true
         puts " ensure_tcp_success #{e.inspect}"
         sleep 1
       else
+        puts e.inspect
+	puts e.class
         raise e
       end
     end
@@ -121,7 +123,7 @@ namespace :load_merchants do
   task :t_com_HR => :environment do
     @start_time = Time.now
     @counter = 0
-
+=begin
     puts "Initializing search parameters"
     SearchPath.transaction do
       expand_search do |a|
@@ -130,7 +132,7 @@ namespace :load_merchants do
         end
       end
     end
-
+=end
     puts "Starting import"    
     @level = 2
     while SearchPath.where(:status => 'in progress').count > 0
